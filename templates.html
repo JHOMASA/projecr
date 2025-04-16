@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Retro Pacman</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;800&family=Yesteryear&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'BDCartoonShoutRegular';
+      src: url('BD_Cartoon_Shout-webfont.ttf') format('truetype');
+    }
+
+    body {
+      background: #000;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: 'BDCartoonShoutRegular', 'Open Sans', sans-serif;
+      overflow: hidden;
+    }
+
+    #startScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      color: yellow;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', Courier, monospace;
+      z-index: 9999;
+    }
+
+    .start-button {
+      font-size: 2rem;
+      color: white;
+      margin-top: 20px;
+      cursor: pointer;
+      animation: blink 1s step-start 0s infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    h1 {
+      font-size: 4rem;
+      color: #ffcb05;
+      margin: 20px 0;
+      z-index: 2;
+    }
+
+    .circle-row {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+      z-index: 1;
+      position: relative;
+    }
+
+    .circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #ffd74a;
+      color: #201c29;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.4rem;
+      box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s ease, background-color 0.3s;
+      position: relative;
+    }
+
+    .circle.clicked {
+      background-color: transparent;
+      color: transparent;
+      box-shadow: none;
+      transform: scale(0);
+    }
+
+    .pacman {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: yellow;
+      border-radius: 50%;
+      clip-path: polygon(100% 50%, 0% 0%, 0% 100%);
+      z-index: 1000;
+    }
+
+    .ghost {
+      width: 40px;
+      height: 40px;
+      background: red;
+      border-radius: 50% 50% 0 0;
+      position: absolute;
+      animation: orbit 10s linear infinite;
+      z-index: 0;
+    }
+
+    .ghost::after {
+      content: "";
+      display: block;
+      position: absolute;
+      bottom: -10px;
+      width: 100%;
+      height: 10px;
+      background: red;
+      border-radius: 50%;
+    }
+
+    @keyframes orbit {
+      0%   { transform: rotate(0deg) translateX(200px) rotate(0deg); }
+      100% { transform: rotate(360deg) translateX(200px) rotate(-360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="startScreen">
+    <h1>"JS PAC-MAN"</h1>
+    <div class="start-button">PRESS START</div>
+  </div>
+
+  <h1 style="display:none">Jacqueline</h1>
+  <div class="circle-row" id="circles" style="display:none"></div>
+  <h1 style="display:none">Jacqueline</h1>
+
+  <audio id="chompSound" src="https://www.soundjay.com/button/sounds/button-29.mp3" preload="auto"></audio>
+
+  <script>
+    const phrase = "HAVE A GOOD ONE";
+    const container = document.getElementById("circles");
+    const chompSound = document.getElementById("chompSound");
+    const pacman = document.createElement("div");
+    pacman.className = "pacman";
+    document.body.appendChild(pacman);
+    let pacmanX = 50, pacmanY = window.innerHeight / 2;
+    let step = 10;
+    pacman.style.left = pacmanX + 'px';
+    pacman.style.top = pacmanY + 'px';
+
+    function movePacman(e) {
+      switch(e.key) {
+        case 'ArrowUp': pacmanY -= step; break;
+        case 'ArrowDown': pacmanY += step; break;
+        case 'ArrowLeft': pacmanX -= step; break;
+        case 'ArrowRight': pacmanX += step; break;
+      }
+      pacman.style.top = pacmanY + 'px';
+      pacman.style.left = pacmanX + 'px';
+
+      document.querySelectorAll('.circle').forEach((circle) => {
+        const rect = circle.getBoundingClientRect();
+        const px = pacman.getBoundingClientRect();
+        if (!circle.classList.contains('clicked') &&
+            px.left < rect.right &&
+            px.right > rect.left &&
+            px.top < rect.bottom &&
+            px.bottom > rect.top) {
+              chompSound.currentTime = 0;
+              chompSound.play();
+              circle.classList.add('clicked');
+        }
+      });
+    }
+
+    document.addEventListener('keydown', movePacman);
+
+    const letters = [];
+    phrase.split("").forEach((char) => {
+      const circle = document.createElement("div");
+      circle.className = "circle";
+      circle.textContent = char === " " ? "" : char;
+      container.appendChild(circle);
+      letters.push(circle);
+    });
+
+    // Orbiting ghosts around the circle row
+    const ghostColors = ['red', 'blue', 'pink', 'orange', 'cyan'];
+    ghostColors.forEach((color, i) => {
+      const ghost = document.createElement("div");
+      ghost.className = "ghost";
+      ghost.style.background = color;
+      ghost.style.top = '50%';
+      ghost.style.left = '50%';
+      ghost.style.transformOrigin = 'center';
+      ghost.style.animationDelay = `${i * 2}s`;
+      document.body.appendChild(ghost);
+    });
+
+    // Start screen logic
+    document.querySelector('.start-button').addEventListener('click', () => {
+      document.getElementById('startScreen').style.display = 'none';
+      document.querySelector('h1[style]')?.removeAttribute('style');
+      document.getElementById('circles').style.display = 'flex';
+    });
+  </script>
+</body>
+</html>
